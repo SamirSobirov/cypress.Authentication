@@ -2,7 +2,7 @@ name: AutoTest Authentication
 
 on:
   schedule:
-    - cron: '0 * * * *'
+    - cron: '0 * * * *' # Запуск каждый час
   workflow_dispatch:
     inputs:
       user_chat_id:
@@ -20,8 +20,8 @@ jobs:
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
-          # ВАЖНО: Укажи здесь правильный путь к твоему файлу авторизации
-          spec: cypress/e2e/monitoring/auth.cy.js 
+          # ВНИМАНИЕ: Проверь, чтобы путь к файлу теста авторизации был правильным!
+          spec: cypress/e2e/monitoring/registration.cy.js 
           browser: chrome
         env:
           CYPRESS_LOGIN_EMAIL: ${{ secrets.LOGIN_EMAIL }}
@@ -31,25 +31,24 @@ jobs:
       - name: Parse Diagnostic Data
         if: always()
         run: |
-          # Читаем статус API авторизации из файла, который создает Cypress
+          # Читаем HTTP статус из файла, который создал Cypress
           if [ -f auth_api_status.txt ]; then
             API_STATUS=$(cat auth_api_status.txt | tr -d '[:space:]')
           else
             API_STATUS="UNKNOWN"
           fi
 
-          # Умная логика статусов конкретно для авторизации
+          # Формируем статус для Telegram в зависимости от кода ответа сервера
           if [[ "$API_STATUS" == "UNKNOWN" ]]; then
-            echo "MSG_STATUS=❌ UI Error / Crash (До API не дошло)" >> $GITHUB_ENV
+            echo "MSG_STATUS=❌ UI Error / Crash" >> $GITHUB_ENV
           elif [[ "$API_STATUS" -ge 400 ]]; then
-            echo "MSG_STATUS=🆘 Login API Error (HTTP $API_STATUS)" >> $GITHUB_ENV
+            echo "MSG_STATUS=🆘 Error (HTTP $API_STATUS)" >> $GITHUB_ENV
           elif [[ "$API_STATUS" -ge 200 && "$API_STATUS" -lt 400 ]]; then
-            echo "MSG_STATUS=✅ Success (HTTP $API_STATUS)" >> $GITHUB_ENV
+            echo "MSG_STATUS=✅ Success" >> $GITHUB_ENV
           else
-            echo "MSG_STATUS=❌ Unknown Status" >> $GITHUB_ENV
+            echo "MSG_STATUS=❌ Unknown Failure" >> $GITHUB_ENV
           fi
 
-      # Сохраняем скриншоты, если тест упал
       - name: Upload Cypress Screenshots
         uses: actions/upload-artifact@v4
         if: failure() || always()
@@ -69,4 +68,8 @@ jobs:
           token: ${{ secrets.TELEGRAM_TOKEN }} 
           format: markdown
           message: |
-            ${{ github.event.inputs.user_chat_id != '' && '👤 **Manual Testing**' || '📢 **Hourly Monitoring**' }}
+            ${{ github.event_name == 'schedule' && '📢 **Hourly Monitoring**' || '👤 **Manual Testing**' }}
+            
+            🔐 **Authentication Result**
+            **Status:** ${{ env.MSG_STATUS }}
+            **Time:** ${{ github.event_name == 'schedule' && 'Hourly ⏰' || 'Manual 🔘' }}
