@@ -1,0 +1,72 @@
+name: AutoTest Authentication
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+    inputs:
+      user_chat_id:
+        description: 'ID чата для личного ответа'
+        required: false
+        default: ''
+
+jobs:
+  cypress-run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cypress run
+        uses: cypress-io/github-action@v6
+        with:
+          # ВАЖНО: Укажи здесь правильный путь к твоему файлу авторизации
+          spec: cypress/e2e/monitoring/auth.cy.js 
+          browser: chrome
+        env:
+          CYPRESS_LOGIN_EMAIL: ${{ secrets.LOGIN_EMAIL }}
+          CYPRESS_LOGIN_PASSWORD: ${{ secrets.LOGIN_PASSWORD }}
+        continue-on-error: true
+
+      - name: Parse Diagnostic Data
+        if: always()
+        run: |
+          # Читаем статус API авторизации из файла, который создает Cypress
+          if [ -f auth_api_status.txt ]; then
+            API_STATUS=$(cat auth_api_status.txt | tr -d '[:space:]')
+          else
+            API_STATUS="UNKNOWN"
+          fi
+
+          # Умная логика статусов конкретно для авторизации
+          if [[ "$API_STATUS" == "UNKNOWN" ]]; then
+            echo "MSG_STATUS=❌ UI Error / Crash (До API не дошло)" >> $GITHUB_ENV
+          elif [[ "$API_STATUS" -ge 400 ]]; then
+            echo "MSG_STATUS=🆘 Login API Error (HTTP $API_STATUS)" >> $GITHUB_ENV
+          elif [[ "$API_STATUS" -ge 200 && "$API_STATUS" -lt 400 ]]; then
+            echo "MSG_STATUS=✅ Success (HTTP $API_STATUS)" >> $GITHUB_ENV
+          else
+            echo "MSG_STATUS=❌ Unknown Status" >> $GITHUB_ENV
+          fi
+
+      # Сохраняем скриншоты, если тест упал
+      - name: Upload Cypress Screenshots
+        uses: actions/upload-artifact@v4
+        if: failure() || always()
+        with:
+          name: cypress-screenshots
+          path: cypress/screenshots/
+          if-no-files-found: ignore
+
+      - name: Send Telegram Notification
+        if: always()
+        uses: appleboy/telegram-action@master
+        with:
+          to: >-
+            ${{ (github.event.inputs.user_chat_id != '') && 
+            github.event.inputs.user_chat_id || 
+            secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_TOKEN }} 
+          format: markdown
+          message: |
+            ${{ github.event.inputs.user_chat_id != '' && '👤 **Manual Testing**' || '📢 **Hourly Monitoring**' }}
