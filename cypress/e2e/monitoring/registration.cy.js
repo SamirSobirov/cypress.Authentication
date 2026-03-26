@@ -11,7 +11,7 @@ describe('Authentication Flow', () => {
     cy.intercept('POST', '**/login**').as('apiAuth');
 
     // 2. ПЕРЕХОД НА СТРАНИЦУ
-    cy.visit('https://triple-test.netlify.app/sign-in', { timeout: 30000 });
+    cy.visit('https://dev.metatrip.uz/uz/sign-in', { timeout: 30000 });
     
     // Ждем, пока URL станет правильным и страница прогрузится
     cy.url().should('include', '/sign-in');

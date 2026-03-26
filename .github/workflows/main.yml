@@ -2,7 +2,7 @@ name: AutoTest Authentication
 
 on:
   schedule:
-    - cron: '0 * * * *' # Запуск каждый час
+    - cron: '0 */5 * * *' 
   workflow_dispatch:
     inputs:
       user_chat_id:

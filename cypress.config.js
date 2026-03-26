@@ -4,7 +4,7 @@ module.exports = defineConfig({
   chromeWebSecurity: false,
   
   e2e: {
-    baseUrl: 'https://triple-test.netlify.app/',
+    baseUrl: 'https://dev.metatrip.uz/flight/ru/home',
     watchForFileChanges: false,
     viewportWidth: 1280,
     viewportHeight: 800,
