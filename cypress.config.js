@@ -2,13 +2,14 @@ const { defineConfig } = require("cypress");
 
 module.exports = defineConfig({
   chromeWebSecurity: false,
-  
+
+  allowCypressEnv: false, // 👈 ДОБАВЬ ЭТУ СТРОКУ
+
   e2e: {
     baseUrl: 'https://dev.metatrip.uz/flight/ru/home',
     watchForFileChanges: false,
     viewportWidth: 1280,
     viewportHeight: 800,
-
     defaultCommandTimeout: 10000,
     requestTimeout: 15000,
     video: false,
@@ -17,7 +18,7 @@ module.exports = defineConfig({
     setupNodeEvents(on, config) {
       on('before:browser:launch', (browser = {}, launchOptions) => {
         if (browser.family === 'chromium' && browser.name !== 'electron') {
-          launchOptions.args.push('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+          launchOptions.args.push('--user-agent=Mozilla/5.0');
         }
         return launchOptions;
       });

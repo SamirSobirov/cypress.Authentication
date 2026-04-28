@@ -26,7 +26,6 @@ jobs:
         env:
           CYPRESS_LOGIN_EMAIL: ${{ secrets.LOGIN_EMAIL }}
           CYPRESS_LOGIN_PASSWORD: ${{ secrets.LOGIN_PASSWORD }}
-        continue-on-error: true
 
       - name: Parse Diagnostic Data
         if: always()
@@ -71,5 +70,5 @@ jobs:
             ${{ github.event_name == 'schedule' && '📢 **Hourly Monitoring**' || '👤 **Manual Testing**' }}
             
             🔐 **Authentication Result**
-            **Status:** ${{ env.MSG_STATUS }}
+            **Status:** ${{ job.status == 'success' && '✅ Success' || '❌ Failed' }}
             **Time:** ${{ github.event_name == 'schedule' && 'Hourly ⏰' || 'Manual 🔘' }}

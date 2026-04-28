@@ -8,7 +8,10 @@ describe('Authentication Flow', () => {
     cy.viewport(1280, 800);
 
     // 1. ПЕРЕХВАТ API (Важно: перехватываем ДО визита на страницу)
-    cy.intercept('POST', '**/login**').as('apiAuth');
+cy.intercept({
+  method: 'POST',
+  url: '**/login*'
+}).as('apiAuth');
 
     // 2. ПЕРЕХОД НА СТРАНИЦУ
     cy.visit('https://dev.metatrip.uz/uz/sign-in', { timeout: 30000 });
@@ -22,14 +25,14 @@ describe('Authentication Flow', () => {
       .should('be.visible')
       .focus()
       .clear()
-      .type(Cypress.env('LOGIN_EMAIL'), { delay: 50, log: false }); 
+.type(cy.env('LOGIN_EMAIL'), { delay: 50, log: false }); 
 
     // 4. ВВОД ПАРОЛЯ 
     cy.get('input[type="password"]')
       .should('be.visible')
       .focus()
       .clear()
-      .type(Cypress.env('LOGIN_PASSWORD'), { delay: 50, log: false });
+  .type(cy.env('LOGIN_PASSWORD'), { delay: 50, log: false });
 
     cy.wait(1000); 
 
